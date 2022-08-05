@@ -1,11 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Arbutus&family=Ewert&family=Londrina+Sketch&family=Press+Start+2P&family=Rampart+One&family=Rye&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Arbutus&family=Bungee+Shade&family=Creepster&family=Ewert&family=Londrina+Sketch&family=Press+Start+2P&family=Rampart+One&family=Rye&family=Shojumaru&display=swap');
 
 * {
 	margin: 0px;
 	padding: 0px;
 }
 
-header, main{
+header, main, footer{
 	display: flex;
 	justify-content: center;
 }
@@ -14,6 +14,17 @@ header .wrapper {
 	justify-content: space-between;
 	padding: 30px;
 	box-shadow: 0px 2px 10px rgb(4 2 2 / 30%);
+}
+
+footer .wrapper{
+	margin-top: 15vh;
+	display: flex;
+	align-items: flex-end;
+	font-size: x-large;
+	color: white;
+	font-family: 'Bungee Shade', cursive;;
+	height: 150px;
+	background-color: #031e54;
 }
 
 h1, h3 {
@@ -60,7 +71,10 @@ a {
 .row {
 	justify-content: center;
 }
-
+.ids {
+	width: 25%;
+	font-family: 'Shojumaru', cursive;
+}
 .mybtn {
 	margin: 20px;
 	background-color: #07b2c6;
@@ -97,6 +111,10 @@ a {
 	background-color: #07b2c6;
 }
 
+.order h3{
+	font-family: 'Creepster', cursive;
+}
+
 
 @media only screen and (max-width: 1000px) {
 	.container {
@@ -107,6 +125,9 @@ a {
 	}
 	.alert {
 		width: 70%;
+	}
+	footer .wrapper {
+		font-size: large;
 	}
 }
 @media only screen and (min-width: 1001px) and (max-width: 1200px) {

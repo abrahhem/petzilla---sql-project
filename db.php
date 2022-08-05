@@ -1,7 +1,7 @@
 <?php
 	$dbhost = "127.0.0.1";
 	$dbuser = "root";
-	$dbpass = "Lilka1234";
+	$dbpass = "";
 	$dbname = "petzilla";
 
 	$connection = mysqli_connect($dbhost, $dbuser, $dbpass, $dbname);

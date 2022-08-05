@@ -6,49 +6,71 @@
 
 		if ($_POST["queryid"] == 'q1') {
 			$query = $q_1;
+			$command = "Show of all products and stock quantity.";
 		}
 		else if ($_POST["queryid"] == 'q2') {
 			$query = "SELECT order_id, customer_id , employee_id, status, order_date 
 						FROM 
-							Orders 
+							petzilla_Orders 
 						INNER JOIN
-							Statuses
+							petzilla_Statuses
 						USING(status_id)
-						WHERE order_date BETWEEN CURDATE() - INTERVAL" . $_POST["x_weeks"] . "WEEK AND CURDATE()
+						WHERE order_date BETWEEN CURDATE() - INTERVAL " . $_POST["x_weeks"] . " WEEK AND CURDATE()
 						ORDER BY
 							order_date";
+			$command = "Show all the orders in the last X weeks.";
 		}
 		else if ($_POST["queryid"] == 'q3') {
-			$query = $q_3;
+			$query		= $q_3; 
+			$command	= "Show the employee who sold the most products.";
 		}
 		else if ($_POST["queryid"] == 'q4') {
-			$query = $q_4;
+			$query		= $q_4;
+			$command	= "Show the employee who brought in the most money.";
 		}
 		else if ($_POST["queryid"] == 'q5') {
-			$query = $q_5;
+			$query		= $q_5;
+			$command	= "Show active orders and the customer who ordered.";
 		}
 		else if ($_POST["queryid"] == 'q6') {
-			$query = $q_6;
+			$query		= $q_6;
+			$command	= "Show the customers who have not placed any orders.";
 		}
 		else if ($_POST["queryid"] == 'q7') {
-			$query = $q_7;
+			$query		= $q_7;
+			$command	= "Show the customers who have made more than one order.";
 		}
 		else if ($_POST["queryid"] == 'q8'){
-			$query = "";
+			$query		= "SELECT count(order_id) AS OrdersCount, sum(total) TotalIncomes
+							FROM
+								petzilla_Orders
+							WHERE order_date BETWEEN CURDATE() - INTERVAL " . $_POST["x_month"] . " MONTH AND CURDATE()";
+			$command	= "Show income X months back.";
 		}
+	
 	}
 	else if(isset($_POST["procid"])) {
 		if ($_POST["procid"] == 'p1') {
-			# code...
+			$query		= "CALL FinishOrder(". $_POST["order_id"] . ", " . $_POST["employee_id"] . ")";
+			$command	= "Update delivery for an order, updates the end of delivery for an existing order.";
 		}
 		else if ($_POST["procid"] == 'p2') {
-			# code...
+			$query		= "CALL BestSellingProducts(" . $_POST["x_days"] . "," . $_POST["y_prod"] . ")";
+			$command	= "List of the Y best selling products in the last X days.";
 		}
-		else {
-			# code...
+		else if ($_POST["procid"] == 'p3'){
+			$query		= "CALL Discount(" . $_POST["order_id"] . "," . $_POST["percentage"] . ")";
+			$command	= "Granting a 0-100 percent discount for an order.";
 		}
-	 }
-
+	}
+	
+	else if(isset($_POST["funcid"])) {
+		if ($_POST["funcid"] == "f1") {
+			$query		= "SELECT incomes('" . $_POST["seller_name"] . "'," . $_POST["year"] . ", " . $_POST["month"] . ") AS IncomeSum";
+			$command	= "The sum of income in a certain month.";
+		}
+	}
+	
 	if (!isset($query)) {
 		if (isset($_POST["procid"]) || isset($_POST["queryid"]) || isset($_POST["funcid"])) {
 			$error = "The query/operation was not recognized";
@@ -59,12 +81,13 @@
 		if (!$result) {
 			$error = $result->error;
 		}
-		else {
+		else if($_POST["procid"] != 'p1' && $_POST["procid"] != 'p3' && !isset($_POST["funcid"])){
 			$row_count = mysqli_num_rows($result);
 		}
-	 }
 	
-
+	}
+	include "modal_queries.php";
+	
 ?>
 <!DOCTYPE html>
 <html>
@@ -139,7 +162,7 @@
 				</div>
 			</div>
 			<?php
-
+				
 				if (isset($error)) {
 					echo '<div class="m-5 flex">
 							<div class="alert myalert alert-danger" role="alert">
@@ -149,13 +172,14 @@
 							</div>
 						</div>';
 				}
-				if (isset($row_count)) {
+				else if (isset($row_count)) {
 					if($row_count == 0 && (isset($_POST["queryid"]) || isset($_POST["procid"]))) {
 						echo '<div class="m-5 flex">
 								<div class="alert myalert alert-warning" role="alert">
 									<h5 class="alert-heading">The table is empty!</h5>
 									<hr>
-									<p>The query/procedure succeeded but the resulting table is empty, and the columns cannot be loaded.</p>
+									<p>' . $command . '</p>
+									<p>The query/procedure succeeded but the result table is empty, and the columns cannot be loaded.</p>
 								</div>
 							</div>';
 					}
@@ -164,6 +188,7 @@
 								<div class="alert myalert alert-success" role="alert">
 									<h5 class="alert-heading">Done successfully!</h5>
 									<hr>
+									<p>' . $command . '</p>
 									<p>Number of rows returned '. $row_count . '.</p>
 								</div>
 							</div>';
@@ -187,6 +212,42 @@
 									} 
 							echo '</tbody>
 							</table>';
+					}
+				}
+				else if (isset($_POST["procid"])) {
+					if($_POST["procid"] == "p1") {
+						echo '<div class="m-5 flex">
+								<div class="alert myalert alert-success" role="alert">
+									<h5 class="alert-heading">Done successfully!</h5>
+									<hr>
+									<p>' . $command . '</p>
+									<p>The order (ID = '. $_POST["order_id"] .') has reached the customer</p>
+								</div>	
+							</div>';
+					}
+					else if($_POST["procid"] == "p3") {
+						$row = mysqli_fetch_assoc($result);
+						echo '<div class="m-5 flex">
+								<div class="alert myalert alert-success" role="alert">
+									<h5 class="alert-heading">Done successfully!</h5>
+									<hr>
+									<p>' . $command . '</p>
+									<p>A ' . $_POST["percentage"] .'% discount was given for order number ' . $_POST["order_id"] . ' the total now is ' . $row["total"] . '$</p>
+								</div>	
+							</div>';
+					}
+				}
+				else if(isset($_POST["funcid"])) {
+					$row = mysqli_fetch_assoc($result);
+					if ($_POST["funcid"] == "f1") {
+						echo '<div class="m-5 flex">
+								<div class="alert myalert alert-success" role="alert">
+									<h5 class="alert-heading">Done successfully!</h5>
+									<hr>
+									<p>' . $command . '</p>
+									<p>On ' .  $_POST["year"] . '/' . $_POST["month"] . ', ' . $_POST["seller_name"] . ' brought in ' . $row["IncomeSum"] . '$ in revenue to the store</p>
+								</div>	
+							</div>';
 					}
 				}
 				
@@ -361,19 +422,21 @@
 						<label for="P1OrderID">Order ID</label>
 						<select class="form-select mb-4" id="P1OrderID" name="order_id" required>
 							<?php
-								// $proc1_order_id = $order_id;
-								// while($row = mysqli_fetch_assoc($proc_order_id)) {
-								// 	echo '<option value="' . $row . '">' . $row . '</option>';
-								// }
+								$p1_order_id = $orders_result;
+								while($row = mysqli_fetch_assoc($p1_order_id)) {
+									echo '<option value="' . $row["order_id"] . '">' . $row["order_id"] . '</option>';
+								}
 							?>
 						</select>
 					</div>
 					<div class="row-5 m-2">
 						<label for="P1empID">Delivery guy ID</label>
 						<select class="form-select mb-4" id="P1empID"  name="employee_id" required>
-							<option value="1">One</option>
-							<option value="2">Two</option>
-							<option value="3">Three</option>
+							<?php
+								while($row = mysqli_fetch_assoc($delivery_guy_result)) {
+									echo '<option value="' . $row["employee_id"] . '">' . $row["employee_id"] . '</option>';
+								} 
+							?>
 						</select>
 					</div>
 					<div class="modal-footer">
@@ -389,7 +452,7 @@
 				<div class="modal-dialog">
 				  <div class="modal-content">
 					<div class="modal-header">
-					  <h5 class="modal-title" id="exampleModalLabel">The first procedure</h5>
+					  <h5 class="modal-title" id="exampleModalLabel">The second procedure</h5>
 					  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 					</div>
 					<input type="text" name="procid" value="p2" hidden>
@@ -418,22 +481,16 @@
 					  <h5 class="modal-title" id="exampleModalLabel">The third procedure</h5>
 					  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 					</div>
-					<input type="text" name="procid" value="p2" hidden>
+					<input type="text" name="procid" value="p3" hidden>
 					<div class="modal-body">Granting a 0-100 percent discount for an order.</div>
 					<div class="row-5 m-2">
 						<label for="customRange2" class="form-label">Discount percentage<span id="range"> - 30</span></label>
-						<input type="range" class="form-range" min="0" max="100" id="meter" value="30" required>
+						<input type="range" class="form-range" min="0" max="100" id="meter" name="percentage" value="30" required>
 					</div>
 					<div class="row-5 m-2">
 						<label for="p3OrderID">Order ID</label>
 						<select class="form-select mb-4" id="p3OrderID" name="order_id" required>
-						<?php
-								// $proc3_order_id = $order_id;
-								// while($row = mysqli_fetch_assoc($proc3_order_id)) {
-								// 	echo '<option value="' . $row . '">' . $row . '</option>';
-								// }
-								// mysqli_free_result($order_id);
-						?>
+						
 						</select>
 					</div>
 					<div class="modal-footer">
@@ -454,18 +511,24 @@
 					  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 					</div>
 					<input type="text" name="funcid" value="f1" hidden>
-					<div class="modal-body">The amount of income in a certain month.</div>
+					<div class="modal-body">The sum of income in a certain month.</div>
 					<div class="row-5 m-2">
-						<label for="func_name">Seller name:</label>
-						<input type="func_name" name="text" required>
+						<label for="seller_name">Seller name</label>
+						<select class="form-select mb-4" id="seller_name" name="seller_name" required>
+						<?php
+							while($row = mysqli_fetch_assoc($seller_names_result)) {
+								echo '<option value="' . $row["name"] . '">' . $row["name"] . '</option>';
+							} 
+						?>
+						</select>
 					</div>
 					<div class="row-5 m-2">
-						<label for="month">Year:</label>
-						<input type="year" name="year" required>
+						<label for="month">Year</label>
+						<input class="form-control" type="year" name="year" required>
 					</div>
 					<div class="row-5 m-2">
-						<label for="month">Month:</label>
-						<select id="month" name="month" required>
+						<label for="month">Month</label>
+						<select class="form-select mb-4" id="month" name="month" required>
 							<option value="1" selected>January</option>
 							<option value="2">February</option>
 							<option value="3">March</option>
@@ -480,14 +543,6 @@
 							<option value="12">December</option>
 						</select>
 					</div>
-					<div class="row-5 m-2">
-						<label for="f1OrderID">Order ID</label>
-						<select class="form-select mb-4" id="f1OrderID" name="order_id" required>
-							<option value="1">One</option>
-							<option value="2">Two</option>
-							<option value="3">Three</option>
-						</select>
-					</div>
 					<div class="modal-footer">
 					  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 					  <button type="submit" class="btn btn-primary">Execute</button>
@@ -496,12 +551,21 @@
 				</div>
 			</div>
 		</form>
+		<footer>
+			<div class="container wrapper">
+			<p>&copy; Abrahem Elnakeeb and Roy Weizman. 2022 all rights reserved</p>
+			</div>
+		</footer>
 		<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.5/dist/umd/popper.min.js" integrity="sha384-Xe+8cL9oJa6tN/veChSP7q+mnSPaj5Bcu9mPX5F5xIGE0DVittaqT5lorf0EI7Vk" crossorigin="anonymous"></script>	
 		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.min.js" integrity="sha384-kjU+l4N0Yf4ZOJErLsIcvOU2qSb74wXpOhqTvwVx3OElZRweTnQ6d31fXEoRD1Jy" crossorigin="anonymous"></script>
 		<script src="js/script.js"></script>
 	</body>
 </html>
 <?php
+mysqli_free_result($result);
+mysqli_free_result($seller_names_result);
+mysqli_free_result($orders_result);
+mysqli_free_result($delivery_guy_result);
 //close DB connection
 mysqli_close($connection);
 ?>
